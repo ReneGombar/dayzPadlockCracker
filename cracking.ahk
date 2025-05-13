@@ -1,7 +1,7 @@
+; LAUNCH with Ctrl+m
 ;dayz padlock cracker
 ;It takes 3h20m to go through all 9999 numbers
 ;it can start from any initial combination
-;can be paused wth Pause button and resumed with Pause button
 
 #Requires AutoHotkey v2.0
 
@@ -38,15 +38,16 @@ writeLog(){
 }
 
 createHelpGui(){
+
     global helpGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x08000000", "Transparent GUI")
     global helpGuiIsVisible := false
     helpGui.BackColor := "3b3b3b"
     helpGui.SetFont(, "Verdana")
     ;WinSetTransColor("Green", helpGui.Hwnd)
     MouseGetPos &xPos, &yPos ; Get mouse position
-    helpGui.Add("Text", "ca4ffa5 BackgroundTrans w500", "Dialing Delay (default 630) `n`tIncrease Ctrl+n / Decrease Ctrl+Shift+n")
-    helpGui.Add("Text", "ca4ffa5 BackgroundTrans w500", "Delay between key presses for cursor movement (default 300). `n`tIncrease Ctrl+k / Decrease Ctrl+Shift+k")
-    helpGui.Add("Text", "ca4ffa5 BackgroundTrans w500", "Pressdown of 'f' key for cursor movement (default 45). `n`tIncrease Ctrl+l / Decrease Ctrl+Shift+l")
+    helpGui.Add("Text", "ca4ffa5 BackgroundTrans w500", "Dialing Delay (default " dialingTimer ") `n`tIncrease Ctrl+n / Decrease Ctrl+Shift+n")
+    helpGui.Add("Text", "ca4ffa5 BackgroundTrans w500", "Delay between key presses for cursor movement (default " keyDelayTimer "). `n`tIncrease Ctrl+k / Decrease Ctrl+Shift+k")
+    helpGui.Add("Text", "ca4ffa5 BackgroundTrans w500", "Pressdown of 'f' key for cursor movement (default " pressReleaseTimer "). `n`tIncrease Ctrl+j / Decrease Ctrl+Shift+j")
     helpGui.Show("x" (xPos+100) "y" (yPos + 350) "NoActivate")
     helpGui.Hide()
 }
@@ -114,7 +115,7 @@ createHelpGui(){
                     startingCombination := value
                     ;ToolTip("Valid number: " value)
                     ;SetTimer(() => ToolTip(), -3000)
-                    MsgBox ("Make sure the digit selector in the game is on the far right digit, ex: 1 2 3 [4]")
+                    MsgBox ("Make sure the digit selector in the game is on the far right digit!`n`tExample for 4 digit lock: 1 2 3 [4]  `n`tExample for 3 digit lock:1 2 [3]")
                     ;ToolTip ("Script Starting")
                     sleep 500
                     currentCombo:=startingCombination
@@ -168,6 +169,7 @@ createHelpGui(){
     
     ones(){
         global currentCombo, dialingTimer
+        Sleep 100
         Send "{f down}"
         loop 10{    ; loops through ten digits of the ones
             Sleep dialingTimer
@@ -176,7 +178,7 @@ createHelpGui(){
             ;info := lockSize =4 ? SubStr(Format("{:04}", currentCombo), -4) : SubStr(Format("{:03}", currentCombo), -3)
             ;info := "Current Combo: " info "`nCursor Speed:  " Format("{:03}", keyDelayTimer) "," Format("{:03}", pressReleaseTimer) "`nDialing Speed: " dialingTimer
             lastDigit == 0 ? currentCombo:= currentCombo-10 : 0
-            ToolTip (currentCombo)
+            ;ToolTip (currentCombo)
         }
         Send "{f Up}"
         Sleep 1000
@@ -246,10 +248,8 @@ createHelpGui(){
 }
 
 global dialingTimer:= 630
-global keyDelayTimer := 300 ; delay between keys
+global keyDelayTimer := 350 ; delay between key presses
 global pressReleaseTimer:= 45   ; time of press down for a key
-global info :=""
-
 
 ^n::{   ; increase dialing Timer
     global dialingTimer
@@ -271,19 +271,17 @@ global info :=""
     keyDelayTimer := keyDelayTimer - 10
 }
 
-^l::{   ; press down of a key for cursor movement
+^j::{   ; press down of a key for cursor movement
     global pressReleaseTimer
     pressReleaseTimer := pressReleaseTimer + 10
 }
 
-^+l::{   ; press down of a key for cursor movement
+^+j::{   ; press down of a key for cursor movement
     global pressReleaseTimer
-    pressReleaseTimer := keyDelayTimer - pressReleaseTimer
+    pressReleaseTimer :=  pressReleaseTimer - 10
 }
 
-
-
-^h::{
+^h::{   ; toggle help menu
     global helpGui, helpGuiIsVisible
     if helpGuiIsVisible
         {
@@ -300,6 +298,7 @@ global info :=""
 
 Esc::
 {
+    Send "{f Up}"
     writeLog
     ExitApp
 }
