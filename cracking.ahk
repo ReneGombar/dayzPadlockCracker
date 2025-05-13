@@ -17,9 +17,13 @@ currentCombo := 0
 digits := []
 initialRun:= FormatTime(A_Now, "yyyy-MM-dd HH:mm:ss")
 
+dialingTimer:= 630
+keyDelayTimer := 350 ; delay between key presses
+pressReleaseTimer:= 45   ; time of press down for a key
+
 filePath := "log.txt"
 
-writeLog(){
+writeLog(){ ;check and creates a log.txt with info on the session
     global initialRun,startingCombination, currentCombo
     if FileExist(filePath) {
         f := FileOpen(filePath, "a")  ; Append if exists
@@ -37,8 +41,7 @@ writeLog(){
     }
 }
 
-createHelpGui(){
-
+createHelpGui(){   ;creates the toggable help window
     global helpGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x08000000", "Transparent GUI")
     global helpGuiIsVisible := false
     helpGui.BackColor := "3b3b3b"
@@ -53,10 +56,13 @@ createHelpGui(){
 }
 
 
-^m:: 
+^m:: ;initiate the script
 {   
     global isRunning, paused
     global startingCombination, thousandthDigitStartingNumber, hundredthDigitStartingNumber, tenthDigitStartingNumber, onesDigitStartingNumber
+    tenthDigitCounter:= 10
+    hundredthDigitCounter:= 10
+    thousandthDigitCounter:= 9
     
     readLockSize(){     ; read lock size and trigger startig combo
         global lockSize
@@ -166,8 +172,7 @@ createHelpGui(){
         SendEvent secondMove ; moves back to ones
     }
     
-    
-    ones(){
+    ones(){ ; holds down f key to run through 10 digits of the far right digit 
         global currentCombo, dialingTimer
         Sleep 100
         Send "{f down}"
@@ -184,7 +189,39 @@ createHelpGui(){
         Sleep 1000
     }
     
-    displayGui(){
+    tens(){ ; increases the tenths digit after the ones run through all 10
+        global currentCombo, lockSize ; array digits[digits.Length-1] is the the tenth digit
+        loop tenthDigitCounter{
+            ones()
+            lockSize = 4 ? moveDigits(3) : moveDigits(2)
+            currentCombo:= currentCombo + 10
+            arr := splitCombo(currentCombo)
+            if arr[arr.Length-1] = 0 
+                break
+        }
+        tenthDigitCounter:=10
+    }
+    
+    hundreds(){ ; increases the hundredth digit after the tens run ten times
+        global currentCombo, lockSize ; array digits[digits.Length-2] is the the hundreds digit
+        loop hundredthDigitCounter {
+            tens()
+            lockSize = 4 ? moveDigits(2) : moveDigits(1)
+            arr := splitCombo(currentCombo)
+            if arr[arr.Length-2] =0 && lockSize == 4  
+                break
+        }
+        hundredthDigitCounter:=10
+    }
+
+    thousands(loops){  ; is called for 4 digit lock, and runs 9 times. 
+        loop loops {
+            hundreds()
+            moveDigits(1)
+        }
+    }
+
+    displayGui(){   ;display the gui showing the current combination and other info. Fully dynamic
         global myGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x08000000", "Transparent GUI")
         myGui.BackColor := "Green"
         MyGui.SetFont(, "Verdana")
@@ -208,49 +245,11 @@ createHelpGui(){
     }
     
 
-    tens(){
-        global currentCombo, lockSize ; array digits[digits.Length-1] is the the tenth digit
-        loop tenthDigitCounter{
-            ones()
-            lockSize = 4 ? moveDigits(3) : moveDigits(2)
-            currentCombo:= currentCombo + 10
-            arr := splitCombo(currentCombo)
-            if arr[arr.Length-1] = 0 
-                break
-        }
-        tenthDigitCounter:=10
-    }
-
-    hundreds(){
-        global currentCombo, lockSize ; array digits[digits.Length-2] is the the hundreds digit
-        loop hundredthDigitCounter {
-            tens()
-            lockSize = 4 ? moveDigits(2) : moveDigits(1)
-            arr := splitCombo(currentCombo)
-            if arr[arr.Length-2] =0 && lockSize == 4  
-                break
-        }
-        hundredthDigitCounter:=10
-    }
-
-    thousands(loops){
-        loop loops {
-            hundreds()
-            moveDigits(1)
-        }
-    }
-
-    ;MAIN ************************
-    tenthDigitCounter:= 10
-    hundredthDigitCounter:= 10
-    thousandthDigitCounter:= 9
+    ;BEGIN ************************
     readLockSize    ; begin the script
 }
 
-global dialingTimer:= 630
-global keyDelayTimer := 350 ; delay between key presses
-global pressReleaseTimer:= 45   ; time of press down for a key
-
+; Shortcuts for changing settings 
 ^n::{   ; increase dialing Timer
     global dialingTimer
     dialingTimer := dialingTimer + 10
@@ -293,7 +292,6 @@ global pressReleaseTimer:= 45   ; time of press down for a key
             helpGui.Show("NoActivate")
             helpGuiIsVisible := true
         }
-        
 }
 
 Esc::
